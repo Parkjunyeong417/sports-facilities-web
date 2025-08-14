@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>루틴핏(RoutineFit) — 경로 기반 건강관리</title>
+  <meta name="description" content="출퇴근·등하교 등 일상 경로를 기반으로 주변 체육시설을 추천하고, 칼로리·근육 강화 부위 등 운동 효과를 안내하는 건강관리 서비스" />
+  <style>
+    /* --------------------
+       Design Tokens
+    ---------------------*/
+    :root{
+      --brand-50:#ecfdf5; --brand-100:#d1fae5; --brand-200:#a7f3d0; --brand-300:#6ee7b7;
+      --brand-400:#34d399; --brand-500:#10b981; --brand-600:#059669; --brand-700:#047857;
+      --ink:#111827; --muted:#6b7280; --line:#e5e7eb; --bg:#ffffff; --bg-soft:#f9fafb;
+      --radius:16px; --shadow:0 8px 24px rgba(17,24,39,.08);
+    }
+
+    /* --------------------
+       Base / Layout
+    ---------------------*/
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,Noto Sans KR,Pretendard,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    img{max-width:100%;display:block}
+    .container{max-width:1120px;margin:0 auto;padding:0 24px}
+
+    /* --------------------
+       Components
+    ---------------------*/
+    .btn{display:inline-flex;align-items:center;gap:8px;border:none;border-radius:12px;padding:12px 18px;font-weight:700;cursor:pointer}
+    .btn.primary{background:var(--brand-600);color:#fff}
+    .btn.primary:hover{background:var(--brand-700)}
+    .btn.ghost{border:1px solid var(--brand-200);color:var(--brand-700);background:#fff}
+    .btn.ghost:hover{background:var(--brand-50)}
+
+    .badge{display:inline-block;background:var(--brand-50);color:var(--brand-700);padding:6px 10px;border-radius:999px;font-size:12px;border:1px solid var(--brand-200)}
+
+    .card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow)}
+
+    .grid{display:grid;gap:24px}
+    @media(min-width:768px){
+      .grid.cols-2{grid-template-columns:repeat(2,1fr)}
+      .grid.cols-3{grid-template-columns:repeat(3,1fr)}
+      .grid.cols-4{grid-template-columns:repeat(4,1fr)}
+      .grid.cols-5{grid-template-columns:repeat(5,1fr)}
+    }
+
+    .section{padding:72px 0}
+    .section h2{margin:0 0 8px;font-size:28px}
+    .section .sub{color:var(--muted);margin:0 0 24px}
+
+    /* --------------------
+       Nav / Hero
+    ---------------------*/
+    .nav{position:sticky;top:0;background:rgba(255,255,255,.8);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);z-index:40}
+    .nav-inner{display:flex;align-items:center;justify-content:space-between;padding:12px 0}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:800}
+    .brand svg{color:var(--brand-600)}
+    .navlinks{display:none;gap:20px;font-size:14px}
+    .navlinks a:hover{color:var(--brand-600)}
+    @media(min-width:768px){.navlinks{display:flex}}
+
+    .hero{position:relative;overflow:hidden;background:linear-gradient(180deg,var(--brand-50),#fff)}
+    .hero-inner{display:grid;gap:40px;align-items:center}
+    @media(min-width:768px){.hero-inner{grid-template-columns:1.1fr .9fr}}
+    .preview{position:relative;border:1px solid var(--line);border-radius:24px;overflow:hidden;box-shadow:var(--shadow)}
+    .preview .overlay{position:absolute;inset:auto 0 0 0;background:linear-gradient(180deg,transparent,rgba(0,0,0,.45));padding:16px;color:#fff}
+
+    /* --------------------
+       Lists / Facility
+    ---------------------*/
+    .facility{display:flex;align-items:center;justify-content:space-between;gap:16px;border:1px solid var(--line);border-radius:14px;padding:16px}
+    .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+    .chip{background:var(--brand-50);border:1px solid var(--brand-200);color:var(--brand-700);padding:4px 10px;border-radius:999px;font-size:12px}
+
+    /* --------------------
+       Form / Inputs
+    ---------------------*/
+    .field{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--line);border-radius:12px;padding:10px}
+    .field input{border:none;outline:none;text-align:right;width:110px;padding:8px;border-radius:10px;background:#fff}
+    .field label{color:var(--muted);font-size:14px}
+    .result{border:1px solid var(--line);border-radius:12px;padding:10px;text-align:right}
+
+    /* --------------------
+       CTA / Footer
+    ---------------------*/
+    .cta{background:rgba(5,150,105,.96);color:#fff;border-radius:24px;padding:24px}
+    .cta input{height:44px;border-radius:12px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.1);color:#fff;padding:0 12px;outline:none}
+    .cta input::placeholder{color:rgba(255,255,255,.8)}
+    .cta .row{display:flex;flex-direction:column;gap:10px}
+    @media(min-width:768px){.cta .row{flex-direction:row}}
+
+    footer{border-top:1px solid var(--line);padding:40px 0;color:var(--muted);font-size:14px}
+
+    /* --------------------
+       Icon primitives
+    ---------------------*/
+    .icon{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:12px;background:var(--brand-50);color:var(--brand-700);border:1px solid var(--brand-200)}
+    .icon svg{width:20px;height:20px}
+    .right{text-align:right}
+  </style>
+</head>
+<body>
+  <!-- =================== NAV =================== -->
+  <header class="nav">
+    <div class="container nav-inner">
+      <div class="brand">
+        <span class="icon" aria-hidden="true">
+          <!-- dumbbell -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="1" y="9" width="4" height="6" rx="1"/>
+            <rect x="19" y="9" width="4" height="6" rx="1"/>
+            <rect x="7" y="10" width="10" height="4" rx="1"/>
+          </svg>
+        </span>
+        루틴핏
+      </div>
+      <nav class="navlinks">
+        <a href="#problem">문제점</a>
+        <a href="#solution">해결 방법</a>
+        <a href="#features">주요 기능</a>
+        <a href="#demo">데모</a>
+        <a href="#report">리포트</a>
+        <a href="#benefit">기대 효과</a>
+      </nav>
+      <a class="btn primary" href="#cta">알림 신청</a>
+    </div>
+  </header>
+
+  <!-- =================== HERO =================== -->
+  <section id="top" class="hero">
+    <div class="container section">
+      <div class="hero-inner">
+        <div>
+          <span class="badge">경로 기반 맞춤 건강관리</span>
+          <h1 style="margin:16px 0 0;font-size:40px;line-height:1.15;font-weight:900">
+            일상 경로에 <span style="color:var(--brand-600)">운동</span>을 더하다
+          </h1>
+          <p style="margin:16px 0 0;color:var(--muted);font-size:18px">
+            루틴핏은 출·퇴근/등하교 등 자주 다니는 경로를 기반으로 주변 체육시설을 추천하고,
+            이용 시 기대되는 운동 효과를 개인 맞춤으로 안내합니다.
+          </p>
+          <div style="margin-top:20px;display:flex;gap:12px;flex-wrap:wrap">
+            <a class="btn primary" href="#demo">지금 살펴보기</a>
+            <a class="btn ghost" href="#features">기능 보기</a>
+          </div>
+        </div>
+        <div>
+          <figure class="preview">
+            <img alt="경로 주변 시설 예시" src="https://images.unsplash.com/photo-1520975916090-3105956dac38?q=80&w=1600&auto=format&fit=crop" />
+            <figcaption class="overlay">
+              <div style="font-size:14px">경로 주변 시설을 한눈에</div>
+              <div style="opacity:.85;font-size:12px">거리·시간·종목을 비교하고 바로 예약까지</div>
+            </figcaption>
+          </figure>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================== 2. 문제점 =================== -->
+  <section id="problem" class="section">
+    <div class="container">
+      <h2>2. 문제점</h2>
+      <p class="sub">지속 가능한 운동이 어려운 이유</p>
+      <div class="grid cols-3">
+        <div class="card">
+          <div class="icon" aria-hidden="true">
+            <!-- clock -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>
+            </svg>
+          </div>
+          <h3 style="margin:10px 0 0;font-size:18px">운동 시간 확보의 어려움</h3>
+          <p style="margin:8px 0 0;color:var(--muted);font-size:14px">바쁜 일상 속에서 별도의 이동·시간을 내기 힘듭니다.</p>
+        </div>
+        <div class="card">
+          <div class="icon" aria-hidden="true">
+            <!-- pin -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="3"/>
+            </svg>
+          </div>
+          <h3 style="margin:10px 0 0;font-size:18px">접근성·효과 정보의 부재</h3>
+          <p style="margin:8px 0 0;color:var(--muted);font-size:14px">가까운 시설이 있어도 운동 효과와 접근성을 한눈에 보기 어렵습니다.</p>
+        </div>
+        <div class="card">
+          <div class="icon" aria-hidden="true">
+            <!-- sparkles -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 3l2 4 4 2-4 2-2 4-2-4-4-2 4-2 2-4Z"/><path d="M19 14l1 2 2 1-2 1-1 2-1-2-2-1 2-1 1-2Z"/>
+            </svg>
+          </div>
+          <h3 style="margin:10px 0 0;font-size:18px">동기 부여 부족</h3>
+          <p style="margin:8px 0 0;color:var(--muted);font-size:14px">성과가 눈에 보이지 않아 지속적인 운동이 어렵습니다.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================== 3. 해결 방법 =================== -->
+  <section id="solution" class="section" style="background:var(--bg-soft)">
+    <div class="container">
+      <h2>3. 해결 방법</h2>
+      <p class="sub">루틴핏이 제안하는 4가지 해법</p>
+      <div class="grid cols-4">
+        <div class="card">
+          <div class="icon" aria-hidden="true">
+            <!-- route -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><path d="M9 7c6 0 6 10 0 10"/>
+            </svg>
+          </div>
+          <h3 style="margin:10px 0 0;font-size:18px">경로 기반 탐색</h3>
+          <p class="sub" style="margin:8px 0 0">출·퇴근/등하교 등 경로 주변 체육시설 자동 제안</p>
+        </div>
+        <div class="card">
+          <div class="icon" aria-hidden="true">
+            <!-- dumbbell -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="1" y="9" width="4" height="6" rx="1"/>
+              <rect x="19" y="9" width="4" height="6" rx="1"/>
+              <rect x="7" y="10" width="10" height="4" rx="1"/>
+            </svg>
+          </div>
+          <h3 style="margin:10px 0 0;font-size:18px">운동 효과 분석</h3>
+          <p class="sub" style="margin:8px 0 0">개인 체력수준 기반 추천 · 칼로리/근육 부위 안내</p>
+        </div>
+        <div class="card">
+          <div class="icon" aria-hidden="true">
+            <!-- wallet -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="6" width="18" height="12" rx="3"/><circle cx="16" cy="12" r="1.5"/>
+            </svg>
+          </div>
+          <h3 style="margin:10px 0 0;font-size:18px">예약·결제 통합</h3>
+          <p class="sub" style="margin:8px 0 0">여러 시설을 한 번에 결제 · 시간대/종목 예약</p>
+        </div>
+        <div class="card">
+          <div class="icon" aria-hidden="true">
+            <!-- bars -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="10" width="4" height="10" rx="1"/><rect x="10" y="6" width="4" height="14" rx="1"/><rect x="17" y="3" width="4" height="17" rx="1"/>
+            </svg>
+          </div>
+          <h3 style="margin:10px 0 0;font-size:18px">성과 리포트</h3>
+          <p class="sub" style="margin:8px 0 0">월별 기록과 체력 변화 시각화</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================== 4. 주요 기능 =================== -->
+  <section id="features" class="section">
+    <div class="container">
+      <h2>4. 주요 기능</h2>
+      <p class="sub">경로 등록부터 결제·리포트까지 하나로</p>
+      <div class="grid cols-3">
+        <div class="card"><div class="icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><path d="M9 7c6 0 6 10 0 10"/></svg>
+        </div>
+          <h3 style="margin:10px 0 0;font-size:18px">루틴 경로 등록</h3>
+          <p class="sub" style="margin:8px 0 0">집·회사·학교 등 자주 다니는 경로 저장</p>
+        </div>
+        <div class="card"><div class="icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        </div>
+          <h3 style="margin:10px 0 0;font-size:18px">시설 추천</h3>
+          <p class="sub" style="margin:8px 0 0">경로 반경 내 헬스장·필라테스·요가 등 제안</p>
+        </div>
+        <div class="card"><div class="icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="9" cy="9" rx="3" ry="4"/><ellipse cx="15" cy="15" rx="3" ry="4"/></svg>
+        </div>
+          <h3 style="margin:10px 0 0;font-size:18px">운동 효과 안내</h3>
+          <p class="sub" style="margin:8px 0 0">개인 맞춤 칼로리 · 강화 근육 부위</p>
+        </div>
+        <div class="card"><div class="icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 4v4M16 4v4"/></svg>
+        </div>
+          <h3 style="margin:10px 0 0;font-size:18px">예약·결제</h3>
+          <p class="sub" style="margin:8px 0 0">이용권 구매 및 시간 예약</p>
+        </div>
+        <div class="card"><div class="icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="10" width="4" height="10" rx="1"/><rect x="10" y="6" width="4" height="14" rx="1"/><rect x="17" y="3" width="4" height="17" rx="1"/></svg>
+        </div>
+          <h3 style="margin:10px 0 0;font-size:18px">건강 리포트</h3>
+          <p class="sub" style="margin:8px 0 0">월별 운동 성과 시각화</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================== 데모 =================== -->
+  <section id="demo" class="section" style="background:var(--bg-soft)">
+    <div class="container">
+      <h2>미니 데모</h2>
+      <p class="sub">경로 기반 추천과 칼로리 계산(예시 데이터)</p>
+      <div class="grid cols-5">
+        <div class="card" style="grid-column:span 3">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+            <span class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            </span>
+            <h4 style="margin:0;font-size:18px">경로 주변 추천 시설</h4>
+          </div>
+          <div class="grid">
+            <div class="facility">
+              <div>
+                <div style="font-weight:700">바른핏 헬스 클럽</div>
+                <div class="sub">헬스장 · 도보 6분 · 06:00 - 23:00</div>
+                <div class="chips">
+                  <span class="chip">근력</span><span class="chip">지구력</span>
+                </div>
+              </div>
+              <div class="right">
+                <div class="sub">경로 반경</div>
+                <div style="font-weight:800">0.4 km</div>
+                <a href="#cta" style="display:inline-flex;align-items:center;gap:6px;color:var(--brand-700);margin-top:6px">예약하기 ▶</a>
+              </div>
+            </div>
+            <div class="facility">
+              <div>
+                <div style="font-weight:700">숨 요가 스튜디오</div>
+                <div class="sub">요가 · 도보 3분 · 07:00 - 22:00</div>
+                <div class="chips">
+                  <span class="chip">유연성</span><span class="chip">균형</span>
+                </div>
+              </div>
+              <div class="right">
+                <div class="sub">경로 반경</div>
+                <div style="font-weight:800">0.2 km</div>
+                <a href="#cta" style="display:inline-flex;align-items:center;gap:6px;color:var(--brand-700);margin-top:6px">예약하기 ▶</a>
+              </div>
+            </div>
+            <div class="facility">
+              <div>
+                <div style="font-weight:700">밸런스 필라테스</div>
+                <div class="sub">필라테스 · 버스 1정거장 · 09:00 - 21:00</div>
+                <div class="chips">
+                  <span class="chip">코어</span><span class="chip">자세교정</span>
+                </div>
+              </div>
+              <div class="right">
+                <div class="sub">경로 반경</div>
+                <div style="font-weight:800">0.8 km</div>
+                <a href="#cta" style="display:inline-flex;align-items:center;gap:6px;color:var(--brand-700);margin-top:6px">예약하기 ▶</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid" style="grid-column:span 2;gap:24px">
+          <div class="card">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+              <span class="icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12c3-4 6-4 9 0s6 4 9 0"/></svg>
+              </span>
+              <h4 style="margin:0;font-size:18px">시설까지 걷기 칼로리 추정</h4>
+            </div>
+            <div class="grid cols-3">
+              <div class="field"><label>체중 (kg)</label><input id="wInput" type="number" min="30" max="150" value="65"></div>
+              <div class="field"><label>거리 (km)</label><input id="dInput" type="number" step="0.1" min="0" max="10" value="0.6"></div>
+              <div class="result">
+                <div class="sub">예상 소모 칼로리</div>
+                <div id="kcalOut" style="font-size:22px;font-weight:800">0 kcal</div>
+              </div>
+            </div>
+            <p class="sub" style="margin-top:8px">* 보행 3.5 MET, 4.5 km/h 가정의 간이 계산식입니다(개인차 있음).</p>
+          </div>
+
+          <div class="card">
+            <div class="sub" style="font-weight:600">개인화 요소 예시</div>
+            <ul class="sub" style="margin:8px 0 0;padding-left:16px;line-height:1.7">
+              <li>성별·연령·체력 수준(국민체력측정 연계) 기반 종목 추천</li>
+              <li>출·퇴근 경로의 혼잡도/시간대 반영한 접근성 점수</li>
+              <li>장비 유무·샤워실·락커 등 시설 편의 정보</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================== 리포트 =================== -->
+  <section id="report" class="section">
+    <div class="container">
+      <h2>성과 피드백</h2>
+      <p class="sub">월간 리포트로 동기 부여</p>
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <span class="icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="10" width="4" height="10" rx="1"/><rect x="10" y="6" width="4" height="14" rx="1"/><rect x="17" y="3" width="4" height="17" rx="1"/></svg>
+          </span>
+          <h4 style="margin:0;font-size:18px">월간 리포트(예시)</h4>
+        </div>
+        <div style="width:100%;overflow-x:auto">
+          <svg id="reportChart" viewBox="0 0 800 220" style="width:100%;height:220px"></svg>
+        </div>
+        <p class="sub" style="margin-top:8px">* 걸음 수·칼로리·체력 지수 변화를 한 화면에서 확인합니다.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================== 기대 효과 =================== -->
+  <section id="benefit" class="section" style="background:var(--bg-soft)">
+    <div class="container">
+      <h2>5. 기대 효과</h2>
+      <p class="sub">사용자·지역 모두에게 긍정적인 변화</p>
+      <div class="grid cols-2">
+        <div class="card"><h3 style="margin:0 0 6px">시간 절약 & 생활밀착 운동</h3><p class="sub">기존 경로에 운동을 결합해 추가 이동 없이 건강 관리를 돕습니다.</p></div>
+        <div class="card"><h3 style="margin:0 0 6px">지속성 강화</h3><p class="sub">개인 맞춤 효과 안내와 리포트로 꾸준한 운동 습관을 유도합니다.</p></div>
+        <div class="card"><h3 style="margin:0 0 6px">데이터 기반 건강 개선</h3><p class="sub">체력 수준에 맞춘 운동 처방으로 효율적인 개선을 기대할 수 있습니다.</p></div>
+        <div class="card"><h3 style="margin:0 0 6px">지역 경제 기여</h3><p class="sub">주변 체육시설 이용률 증가로 지역 상권 활성화에 도움을 줍니다.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================== CTA =================== -->
+  <section id="cta" class="section">
+    <div class="container">
+      <div class="cta">
+        <div class="grid cols-3" style="align-items:center">
+          <div style="grid-column:span 2">
+            <h3 style="margin:0;font-size:22px">루틴핏 얼리 액세스 알림 받기</h3>
+            <p style="margin:6px 0 0;opacity:.9">출시 소식과 베타 테스트 초대장을 가장 먼저 받아보세요.</p>
+          </div>
+          <form id="ctaForm" class="row">
+            <input id="email" type="email" placeholder="이메일 주소" required />
+            <button class="btn" type="submit" style="background:#fff;color:var(--brand-700);font-weight:800">신청하기</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================== FOOTER =================== -->
+  <footer>
+    <div class="container" style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px">
+      <div>© <span id="year"></span> RoutineFit. All rights reserved.</div>
+      <div style="display:flex;gap:16px">
+        <a href="#problem">문제점</a>
+        <a href="#solution">해결 방법</a>
+        <a href="#features">주요 기능</a>
+        <a href="#demo">데모</a>
+        <a href="#report">리포트</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // ================== 칼로리 계산기 ==================
+    (function(){
+      const w = document.getElementById('wInput');
+      const d = document.getElementById('dInput');
+      const out = document.getElementById('kcalOut');
+      function calc(){
+        const weight = Math.max(0, parseFloat(w.value)||0);
+        const dist = Math.max(0, parseFloat(d.value)||0);
+        const MET = 3.5, speed = 4.5; // km/h 보행 가정
+        const hours = dist / speed;
+        const kcal = Math.round(MET * weight * hours);
+        out.textContent = kcal.toLocaleString() + ' kcal';
+      }
+      ['input','change'].forEach(evt=>{w.addEventListener(evt,calc); d.addEventListener(evt,calc);});
+      calc();
+    })();
+
+    // ================== 리포트 라인차트(SVG) ==================
+    (function(){
+      const data = [
+        { month:'3월', steps:120000, kcal:7200, score:62 },
+        { month:'4월', steps:138000, kcal:8200, score:66 },
+        { month:'5월', steps:145000, kcal:8600, score:69 },
+        { month:'6월', steps:162000, kcal:9400, score:73 },
+        { month:'7월', steps:171000, kcal:9900, score:76 },
+        { month:'8월', steps:182000, kcal:10400, score:79 }
+      ];
+      const svg = document.getElementById('reportChart');
+      const W=800,H=220,P=32;
+      const x = (i,n)=> P + (i*(W-P*2))/Math.max(1,n-1);
+      const yScale = (min,max)=> v => max===min?H/2 : H-P - ((v-min)*(H-P*2))/(max-min);
+
+      const stepsA = data.map(d=>d.steps);
+      const kcalA  = data.map(d=>d.kcal);
+      const scoreA = data.map(d=>d.score);
+      const y1 = yScale(Math.min(...stepsA, ...kcalA), Math.max(...stepsA, ...kcalA));
+      const y2 = yScale(Math.min(...scoreA), Math.max(...scoreA));
+
+      const gridY = Array.from({length:4},(_,i)=> P + i*((H-P*2)/3));
+      const ns='http://www.w3.org/2000/svg';
+      function line(x1,y1,x2,y2,cls){const el=document.createElementNS(ns,'line');el.setAttribute('x1',x1);el.setAttribute('y1',y1);el.setAttribute('x2',x2);el.setAttribute('y2',y2);el.setAttribute('stroke',cls||'#e5e7eb');el.setAttribute('stroke-dasharray','4 4');svg.appendChild(el)}
+      function axis(){line(P,P,P,H-P,'#e5e7eb');line(P,H-P,W-P,H-P,'#e5e7eb')}
+      function poly(pts,color){const el=document.createElementNS(ns,'polyline');el.setAttribute('fill','none');el.setAttribute('stroke',color);el.setAttribute('stroke-width','2.5');el.setAttribute('points',pts);svg.appendChild(el)}
+      function text(x,y,t){const el=document.createElementNS(ns,'text');el.setAttribute('x',x);el.setAttribute('y',y);el.setAttribute('font-size','10');el.setAttribute('fill','#6b7280');el.setAttribute('text-anchor','middle');el.textContent=t;svg.appendChild(el)}
+
+      gridY.forEach(gy=>line(P,gy,W-P,gy)); axis();
+      const pts = (arr,yf)=> arr.map((v,i,a)=>`${x(i,a.length)},${yf(v)}`).join(' ');
+      poly(pts(stepsA,y1),'#10b981');
+      poly(pts(kcalA,y1),'#60a5fa');
+      poly(pts(scoreA,y2),'#f59e0b');
+      data.forEach((d,i,a)=> text(x(i,a.length),H-P+16,d.month));
+    })();
+
+    // ================== Footer 연도 ==================
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // ================== CTA 폼 ==================
+    document.getElementById('ctaForm').addEventListener('submit', function(e){
+      e.preventDefault();
+      const email = (document.getElementById('email').value||'').trim();
+      if(!email){return}
+      alert('알림 신청이 접수되었습니다! 감사합니다.');
+      this.reset();
+    });
+  </script>
+</body>
+</html>
