@@ -79,7 +79,7 @@
        Form / Inputs
     ---------------------*/
     .field{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--line);border-radius:12px;padding:10px}
-    .field input{border:none;outline:none;text-align:right;width:110px;padding:8px;border-radius:10px;background:#fff}
+    .field input{border:none;outline:none;text-align:right;width:88px;padding:8px;border-radius:10px;background:#fff}
     .field label{color:var(--muted);font-size:14px}
     .result{border:1px solid var(--line);border-radius:12px;padding:10px;text-align:right}
 
@@ -100,7 +100,29 @@
     .icon{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:12px;background:var(--brand-50);color:var(--brand-700);border:1px solid var(--brand-200)}
     .icon svg{width:20px;height:20px}
     .right{text-align:right}
-  </style>
+    /* --------------------
+       Theme (Light/Dark)
+    ---------------------*/
+    .btn.sm{padding:8px 12px;font-weight:600;border-radius:10px}
+
+    /* Dark palette overrides */
+    body.dark{--bg:#0b1220;--bg-soft:#0f172a;--ink:#e5e7eb;--muted:#9ca3af;--line:#283147;--shadow:0 8px 24px rgba(0,0,0,.35)}
+    body.dark .hero{background:linear-gradient(180deg,var(--bg-soft),var(--bg))}
+    body.dark .badge{background:#0f2a22;border-color:#155e54;color:#b7f3da}
+    body.dark .chip{background:#0f2a22;border-color:#155e54;color:#b7f3da}
+    body.dark .icon{background:#0f2a22;border-color:#155e54;color:#b7f3da}
+    body.dark .btn.ghost{border-color:#3b4a64;background:transparent;color:#e5e7eb}
+    body.dark .btn.ghost:hover{background:#1b2438}
+    body.dark .card{background:#0f172a;border-color:#1f2a44}
+    body.dark .nav{background:rgba(11,18,32,.75);border-color:#1f2a44}
+    body.dark footer{border-color:#1f2a44}
+
+    /* Respect system preference on first load (if no saved choice) */
+    @media (prefers-color-scheme: dark){
+      body.use-system.dark-enabled{--bg:#0b1220;--bg-soft:#0f172a;--ink:#e5e7eb;--muted:#9ca3af;--line:#283147;--shadow:0 8px 24px rgba(0,0,0,.35)}
+      body.use-system.dark-enabled .hero{background:linear-gradient(180deg,var(--bg-soft),var(--bg))}
+    }
+</style>
 </head>
 <body>
   <!-- =================== NAV =================== -->
@@ -125,7 +147,10 @@
         <a href="#report">리포트</a>
         <a href="#benefit">기대 효과</a>
       </nav>
-      <a class="btn primary" href="#cta">알림 신청</a>
+      <div class="actions" style="display:flex;gap:8px;align-items:center">
+        <button id="themeToggle" class="btn ghost sm" type="button">🌙 다크</button>
+        <a class="btn primary" href="#cta">알림 신청</a>
+      </div>
     </div>
   </header>
 
@@ -359,7 +384,7 @@
               </span>
               <h4 style="margin:0;font-size:18px">시설까지 걷기 칼로리 추정</h4>
             </div>
-            <div class="grid cols-3">
+            <div class="grid cols-3" style="grid-template-columns: 0.8fr 0.8fr 1.4fr">
               <div class="field"><label>체중 (kg)</label><input id="wInput" type="number" min="30" max="150" value="65"></div>
               <div class="field"><label>거리 (km)</label><input id="dInput" type="number" step="0.1" min="0" max="10" value="0.6"></div>
               <div class="result">
@@ -450,6 +475,34 @@
   </footer>
 
   <script>
+    // ================== 테마 토글 ==================
+    (function(){
+      const key='theme';
+      const saved=localStorage.getItem(key);
+      // system-follow marker for CSS @media override
+      document.body.classList.add('use-system');
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if(saved==='dark'){ document.body.classList.add('dark'); }
+      else if(saved==='light'){ document.body.classList.remove('dark'); }
+      else { if(prefersDark){ document.body.classList.add('dark'); document.body.classList.add('dark-enabled'); } else { document.body.classList.remove('dark'); } }
+
+      function setBtnLabel(btn){
+        if(!btn) return;
+        btn.textContent = document.body.classList.contains('dark') ? '☀️ 라이트' : '🌙 다크';
+      }
+      function toggle(){
+        const isDark = document.body.classList.toggle('dark');
+        localStorage.setItem(key, isDark ? 'dark' : 'light');
+        const btn = document.getElementById('themeToggle');
+        setBtnLabel(btn);
+      }
+      // init button
+      window.addEventListener('DOMContentLoaded',()=>{
+        const btn=document.getElementById('themeToggle');
+        if(btn){ setBtnLabel(btn); btn.addEventListener('click', toggle); }
+      });
+    })();
+
     // ================== 칼로리 계산기 ==================
     (function(){
       const w = document.getElementById('wInput');
