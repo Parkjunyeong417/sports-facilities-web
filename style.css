@@ -1,0 +1,216 @@
+:root{
+    --bg:#0f1115;
+    --card:#151923;
+    --muted:#8a93a6;
+    --text:#e9edf3;
+    --brand:#4c8dff;
+    --accent:#6de2c0;
+    --radius:18px;
+    --nav-h:64px;
+}
+*{box-sizing:border-box}
+html,body{height:100%;}
+html{background-color: #e9edf3;}
+body{
+    width: 400px;
+    margin:0 auto;
+    background:linear-gradient(180deg,#0f1115 0%, #0f1115 60%, #0c0e13 100%);
+    color:var(--text);
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+    -webkit-font-smoothing:antialiased;
+    display:flex; flex-direction:column;
+    min-height:100vh;
+}
+
+header{
+    position:sticky; top:0; z-index:5;
+    padding:14px 16px; backdrop-filter:saturate(1.2) blur(6px);
+    background:rgba(10,12,18,0.6);
+    border-bottom:1px solid rgba(255,255,255,0.06);
+    display:flex; align-items:center; justify-content:space-between;
+}
+header .title{font-weight:700; letter-spacing:0.2px}
+header .badge{font-size:12px; color:var(--muted)}
+
+main{flex:1 1 auto; padding:16px; padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom) + 16px)}
+.grid{display:grid; gap:12px}
+@media(min-width:420px){
+    .grid{grid-template-columns:repeat(2,1fr)}
+}
+
+.card{
+    background:linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:var(--radius);
+    padding:16px;
+    box-shadow:0 10px 20px rgba(0,0,0,0.25);
+}
+.card h3{margin:0 0 6px}
+.muted{color:var(--muted)}
+
+.tabbar{
+    width: 400px;
+    margin: 0 auto;
+    position:fixed; left:0; right:0; bottom:0; z-index:10;
+    height:calc(var(--nav-h) + env(safe-area-inset-bottom));
+    padding-bottom:env(safe-area-inset-bottom);
+    background:rgba(18, 10, 10, 0.7);
+    backdrop-filter:saturate(1.2) blur(10px);
+    border-top:1px solid rgba(255,255,255,0.08);
+    z-index: 1000;
+}
+.tabbar .rail{height:var(--nav-h); display:grid; grid-template-columns:repeat(5,1fr); position:relative}
+.tabbtn{
+    -webkit-tap-highlight-color:transparent;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:4px; text-decoration:none; color:var(--muted);
+    font-size:11px; font-weight:600; letter-spacing:0.2px;
+    position:relative;
+    border: 1px solid rgba(138, 147, 166, 0.3); /* 연한 테두리 예시 */
+    border-radius: 8px;                         /* 둥근 모서리 (필요시) */
+    padding: 8px;                               /* 내부 여백 조절 */
+    margin: 1px;
+    border-radius: 10%;
+    background-color: #bbbee63a;
+}
+.tabbtn svg{width:22px; height:22px; opacity:0.9}
+.tabbtn.active{color:var(--brand)}
+.tabbtn.active svg path{fill:var(--brand)}
+
+.ink{
+    position:absolute; height:3px; border-radius:999px;
+    background:linear-gradient(90deg,var(--brand),var(--accent));
+    transition:all .28s ease;
+    bottom:4px;
+    width:24px;
+    left:0;
+    transform:translateX(0);
+}
+
+[data-panel]{display:none; animation:fade .18s ease}
+[data-panel].show{display:block}
+@keyframes fade{from{opacity:0; transform:translateY(4px)} to{opacity:1; transform:none}}
+
+a.cta{
+    display:inline-flex; align-items:center; gap:8px; padding:10px 14px;
+    border-radius:12px; background:linear-gradient(90deg,var(--brand),var(--accent));
+    color:#0a0c12; text-decoration:none; font-weight:800; box-shadow:0 8px 20px rgba(77,141,255,.25);
+}
+
+.profile-image {
+  width: 30%;
+  height: 30%;
+  object-fit: cover; /* 이미지 비율 유지하면서 자르기 */
+  border-radius: 50%; /* 원형으로 만들기 */
+}
+
+.profile-card {
+  display: flex;
+  align-items: center; /* 세로 중앙 정렬 */
+  gap: 16px;           /* 이미지와 이름 사이 간격 */
+}
+
+.profile-text {
+  display: flex;
+  flex-direction: column; /* 텍스트는 세로로 쌓기 */
+}
+
+.profile-text h3 {
+  margin: 0 0 4px 0; /* 아래 마진을 4px로 줄임 */
+}
+
+.more-menu{
+    width: 100%;
+    color:var(--muted);
+    border: var(--muted);
+}
+
+.myPoint-table {
+    width: 100%;
+    text-align: center;
+    border-collapse: collapse;
+}
+
+/* 선택적으로 셀 테두리도 지정 */
+.myPoint-table th, .myPoint-table td {
+    border: 1px solid rgba(128, 128, 128, 0.253);  /* 각 셀에 1px 회색 테두리 */
+    padding: 5px 5px;
+}
+
+.more-logout{
+    text-align: center;
+}
+.more-logout a:link {
+color: rgb(255, 255, 255);
+}
+.more-logout a:visited {
+color: rgb(255, 255, 255);
+}
+
+.more-myinformation{margin: 0;}
+.more-myinformation a:link {
+color: rgba(102, 102, 102, 0.952);
+}
+.more-myinformation a:visited {
+color: rgba(102, 102, 102, 0.952);
+}
+
+#map { height: 400px; width: 100%; }
+
+
+
+
+
+/*SEARCH-BAR*/
+.search-bar {
+  max-width: 400px;
+  margin: 0 auto 20px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.search-bar label {
+  display: block;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.search-bar input {
+  width: calc(100% - 90px);
+  padding: 10px 14px;
+  font-size: 14px;
+  border: 1.5px solid #ccc;
+  border-radius: 6px 0 0 6px;
+  outline: none;
+  box-sizing: border-box;
+  vertical-align: middle;
+  transition: border-color 0.3s ease;
+}
+
+.search-bar input:focus {
+  border-color: #0078d7;
+  box-shadow: 0 0 5px rgba(0, 120, 215, 0.4);
+}
+
+.search-bar button {
+  width: 80px;
+  padding: 10px 0;
+  background-color: #0078d7;
+  color: white;
+  border: none;
+  border-radius: 0 6px 6px 0;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  vertical-align: middle;
+  transition: background-color 0.3s ease;
+}
+
+.search-bar button:hover {
+  background-color: #005a9e;
+}
+
+.search-bar button:active {
+  background-color: #004578;
+}
