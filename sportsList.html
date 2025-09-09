@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0c10" />
+  <title>실버코치 · 운동 목록</title>
+  <style>
+    :root { --bg:#0b0c10; --card:#151922; --ink:#eef2f7; --muted:#b5c0d0; --accent:#5eead4; --danger:#ef4444; --shadow:0 6px 20px rgba(0,0,0,.25); --radius:18px; }
+    @media (prefers-color-scheme: light){
+      :root { --bg:#f6f8fb; --card:#fff; --ink:#0b0c10; --muted:#5b6472; --accent:#0ea5e9; --danger:#dc2626; --shadow:0 6px 18px rgba(12,27,61,.12); }
+      meta[name="theme-color"]{ content:#f6f8fb; }
+    }
+    *{ box-sizing:border-box; } html,body{ height:100%; }
+    body{ margin:0; background:var(--bg); color:var(--ink);
+      font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Noto Sans KR,Apple SD Gothic Neo,Helvetica,Arial,sans-serif;
+      -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+    .app{ min-height:100svh; padding:calc(12px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:12px; }
+    .topbar{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .brand{ font-size:18px; font-weight:700; letter-spacing:.2px; display:flex; gap:8px; align-items:center; text-decoration:none; color:inherit; }
+    .dot{ width:10px; height:10px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 4px color-mix(in srgb, var(--accent) 25%, transparent); }
+    .subtitle{ color:var(--muted); font-size:13px; }
+    .toolbar{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .back{ text-decoration:none; color:inherit; padding:8px 10px; border-radius:12px; }
+    .card{ background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:14px; }
+    .section-title{ font-weight:700; margin: 8px 0 12px; }
+    .mutetext{ color:var(--muted); font-size:13px; }
+    .btn{ appearance:none; border:0; border-radius:14px; padding:12px 16px; font-weight:700; cursor:pointer; background:var(--accent); color:#0b0c10; box-shadow:var(--shadow); }
+    @media (min-width:480px){ .app{ max-width:420px; margin:0 auto; } }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <a class="brand" href="index.html"><span class="dot"></span><span>실버코치</span></a>
+      <div class="subtitle">운동 목록</div>
+    </header>
+
+    <div class="toolbar">
+      <a class="back" href="recommend.html">← 이전</a>
+      <span></span>
+    </div>
+
+    <section class="card">
+      <div class="section-title">목록</div>
+      <div id="list" style="display:grid; gap:10px;"></div>
+    </section>
+  </main>
+
+  <script>
+    const KEY_LOGS='silvercoach.logs';
+    function loadLogs(){ try{ return JSON.parse(localStorage.getItem(KEY_LOGS)) || []; }catch(e){ return []; } }
+    function saveLogs(a){ localStorage.setItem(KEY_LOGS, JSON.stringify(a)); }
+
+    const EX = [
+      { id:'warm_ankle', name:'발목 원 그리기', cat:'유연성', place:'실내', posture:'앉아서', tool:'없음', duration:180, tags:['제자리'] },
+      { id:'neck_roll', name:'목 돌리기', cat:'유연성', place:'실내', posture:'앉아서', tool:'없음', duration:120, tags:['제자리'] },
+      { id:'shoulder_roll', name:'어깨 돌리기', cat:'유연성', place:'실내', posture:'앉아서', tool:'없음', duration:120, tags:['제자리'] },
+      { id:'chair_sts', name:'의자 일어서기', cat:'근력', place:'실내', posture:'앉아서', tool:'의자', duration:300, tags:['제자리'] },
+      { id:'wall_push', name:'벽 밀기(푸시업)', cat:'근력', place:'실내', posture:'서서', tool:'없음', duration:240, tags:['제자리'] },
+      { id:'calf_raise', name:'발끝 들기', cat:'근력', place:'실내', posture:'서서', tool:'의자', duration:180, tags:['제자리'] },
+      { id:'march', name:'제자리 보행', cat:'유산소', place:'실내', posture:'서서', tool:'없음', duration:300, tags:['제자리'] },
+      { id:'side_steps', name:'사이드 스텝', cat:'유산소', place:'실내', posture:'서서', tool:'없음', duration:240, tags:['이동'] },
+      { id:'balance_hold', name:'한 발 서기(지지대)', cat:'균형', place:'실내', posture:'서서', tool:'의자', duration:180, tags:['제자리'] },
+      { id:'walk_out', name:'실외 걷기', cat:'유산소', place:'실외', posture:'서서', tool:'없음', duration:900, tags:['이동'] }
+    ];
+
+    function fmtSec(s){ const m=Math.floor(s/60), r=s%60; return (m?m+'분 ':'')+(r?r+'초':''); }
+
+    function render(){
+      const wrap = document.getElementById('list');
+      wrap.innerHTML = '';
+      EX.forEach(ex=>{
+        const el = document.createElement('div');
+        el.className='card';
+        el.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+            <div>
+              <div style="font-weight:700;">${ex.name}</div>
+              <div class="mutetext">${ex.cat} · ${ex.place} · ${ex.posture} · ${ex.tool} · ${fmtSec(ex.duration)} · ${ex.tags.join('/')}</div>
+            </div>
+            <button class="btn" data-start="${ex.id}">시작</button>
+          </div>
+        `;
+        wrap.appendChild(el);
+      });
+
+      wrap.querySelectorAll('[data-start]').forEach(btn=>{
+        btn.addEventListener('click', e=>{
+          const id = e.currentTarget.getAttribute('data-start');
+          const ex = EX.find(z=>z.id===id);
+          const now = new Date();
+          const log = {
+            date: now.toISOString().slice(0,10),
+            startTime: now.toTimeString().slice(0,5),
+            name: ex.name, durationSec: ex.duration, completed: true,
+            memo: '목록에서 시작', rpe:'보통', pain:false, dizzy:false
+          };
+          const logs = loadLogs(); logs.push(log); saveLogs(logs);
+          alert('기록이 저장되었습니다.');
+        });
+      });
+    }
+    render();
+  </script>
+</body>
+</html>
