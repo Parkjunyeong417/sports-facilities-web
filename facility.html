@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0c10" />
+  <title>실버코치 · 체육 시설</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+  <style>
+    :root{
+      --bg:#0b0c10; --card:#151922; --ink:#eef2f7; --muted:#b5c0d0; --accent:#5eead4;
+      --shadow:0 6px 20px rgba(0,0,0,.25); --radius:18px;
+      --peek:56px; /* 접힌 상태에서 항상 보이는 높이(그랩바+헤더) */
+    }
+    @media (prefers-color-scheme: light){
+      :root{ --bg:#f6f8fb; --card:#ffffff; --ink:#0b0c10; --muted:#5b6472; --accent:#0ea5e9; --shadow:0 6px 18px rgba(12,27,61,.12); }
+      meta[name="theme-color"]{ content:#f6f8fb; }
+    }
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0; background:var(--bg); color:var(--ink);
+      font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Noto Sans KR,Apple SD Gothic Neo,Helvetica,Arial,sans-serif;
+      -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    }
+
+    .app{
+      min-height:100svh;
+      padding:calc(12px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom));
+      display:flex; flex-direction:column; gap:12px;
+    }
+    @media (min-width:480px){ .app{ max-width:420px; margin:0 auto; } }
+
+    .topbar{ display:flex; align-items:center; justify-content:space-between; }
+    .brand{ font-size:18px; font-weight:700; letter-spacing:.2px; display:flex; gap:8px; align-items:center; text-decoration:none; color:inherit; }
+    .brand .dot{ width:10px; height:10px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 4px color-mix(in srgb, var(--accent) 25%, transparent); }
+    .subtitle{ color:var(--muted); font-size:13px; }
+    .back{ text-decoration:none; color:inherit; font-size:14px; padding:8px 10px; border-radius:12px; }
+
+    /* 지도: 페이지 레일(최대 420px) 안에서만 표시 */
+    .map-wrap{
+      position:relative;
+      width:100%;
+      height:min(70vh, 640px);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+      background:var(--card);
+    }
+    #map{ position:absolute; inset:0; }
+
+    /* 바텀시트: 기본은 'peek' 만큼만 보이게 접힘 */
+    .sheet{
+      position:absolute; left:0; right:0; bottom:0;
+      background: color-mix(in srgb, var(--card) 98%, transparent);
+      color:var(--ink);
+      border-radius:16px 16px 0 0;
+      box-shadow:0 -10px 30px rgba(0,0,0,.35);
+      max-height:60vh;                 /* 전체 높이 제한 */
+      transform: translateY(calc(100% - var(--peek)));
+      transition: transform .25s ease;
+      touch-action: none;
+      z-index: 10000;                  /* 지도 위로 확실히 */
+      display:flex; flex-direction:column;
+    }
+    .sheet.open{ transform: translateY(0%); }
+
+    .grab{ width:44px; height:5px; border-radius:999px; background:color-mix(in srgb, var(--ink) 15%, transparent); margin:10px auto 8px; }
+    .sheet header{ display:flex; align-items:center; justify-content:space-between; padding:0 16px 8px; }
+    .title{ font-weight:700; }
+    .muted{ color:var(--muted); font-size:13px; }
+    .list{ padding:0 16px 16px; display:grid; gap:10px; overflow:auto; }
+    .card{ background: color-mix(in srgb, var(--card) 96%, black 0%); border-radius:var(--radius); box-shadow:var(--shadow); padding:12px; }
+    .row{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .btn{ appearance:none; border:0; border-radius:12px; padding:10px 12px; font-weight:700; cursor:pointer; box-shadow:var(--shadow); }
+    .btn.call{ background: color-mix(in srgb, var(--ink) 10%, transparent); color:var(--ink); }
+    .btn.nav{ background: var(--accent); color:#0b0c10; text-decoration:none; }
+    .badge{ font-size:12px; padding:4px 8px; border-radius:999px; background:color-mix(in srgb, var(--ink) 10%, transparent); color:var(--ink); }
+  
+
+  </style>
+</head>
+<body>
+  <main class="app" role="application" aria-label="실버코치 · 체육 시설">
+    <header class="topbar">
+      <a class="brand" href="index.html"><span class="dot"></span>실버코치</a>
+      <div class="subtitle">체육 시설</div>
+    </header>
+
+    <div class="toolbar">
+      <a class="back" href="index.html">← 홈</a>
+    </div>
+
+    <!-- 지도/리스트가 같은 레일(폭) 안에 위치 -->
+    <section class="map-wrap" aria-label="지도 영역">
+      <div id="map"></div>
+
+      <!-- 하단 리스트(바텀시트) -->
+      <section id="sheet" class="sheet" aria-label="체육 시설 리스트">
+        <div class="grab" title="끌어올려 리스트 보기"></div>
+        <header>
+          <div class="title">내 위치 기준 거리순</div>
+          <div id="locText" class="muted">위치 확인 중…</div>
+        </header>
+        <div id="list" class="list" role="list"></div>
+      </section>
+    </section>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script>
+    /* ===== 유틸 ===== */
+    const toRad = d => d*Math.PI/180;
+    function distanceKm(a,b){
+      const R=6371, dLat=toRad(b.lat-a.lat), dLng=toRad(b.lng-a.lng);
+      const la1=toRad(a.lat), la2=toRad(b.lat);
+      const h=Math.sin(dLat/2)**2 + Math.cos(la1)*Math.cos(la2)*Math.sin(dLng/2)**2;
+      return 2*R*Math.asin(Math.sqrt(h));
+    }
+    const gmapDir = (lat,lng)=>`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=walking`;
+
+    // 데모 데이터: 현재 위치 주변 임의 시설(~1km)
+    function mockFacilities(center){
+      const names = ['구립체육센터','노인복지관 체력단련실','커뮤니티 체육관','헬스&재활센터','생활체육교실'];
+      return names.map((name,i)=>{
+        const lat = center.lat + (Math.random()-0.5)*0.01;
+        const lng = center.lng + (Math.random()-0.5)*0.01;
+        return { id:'f'+i, name, lat, lng, address:`샘플 주소 ${i+1}`, phone:`02-0000-000${i}` };
+      });
+    }
+
+    /* ===== 지도 ===== */
+    let map;
+    function initMap(center){
+      map = L.map('map', { zoomControl:true }).setView([center.lat, center.lng], 15);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19, attribution: '&copy; OpenStreetMap'}).addTo(map);
+      L.circleMarker([center.lat, center.lng], {radius:8, color:'#22d3ee', fillColor:'#22d3ee', fillOpacity:.8}).addTo(map).bindPopup('내 위치');
+    }
+
+    function renderFacilities(center, facilities){
+      facilities.sort((a,b)=> distanceKm(center,a) - distanceKm(center,b));
+
+      facilities.forEach(f=>{
+        L.marker([f.lat,f.lng]).addTo(map).bindPopup(`
+          <div style="min-width:220px">
+            <div style="font-weight:700; margin-bottom:4px;">${f.name}</div>
+            <div style="font-size:13px; color:#9aa5b1; margin-bottom:8px;">${f.address}</div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <a class="btn call" href="tel:${f.phone}">전화</a>
+              <a class="btn nav" href="${gmapDir(f.lat,f.lng)}" target="_blank" rel="noopener">길찾기</a>
+            </div>
+          </div>
+        `);
+      });
+
+      const listEl = document.getElementById('list');
+      listEl.innerHTML = '';
+      facilities.forEach(f=>{
+        const km = distanceKm(center, f);
+        const el = document.createElement('div');
+        el.className='card'; el.setAttribute('role','listitem');
+        el.innerHTML = `
+          <div class="row">
+            <div style="font-weight:700;">${f.name}</div>
+            <div class="badge">${km.toFixed(2)}km</div>
+          </div>
+          <div class="muted" style="margin:6px 0 8px;">${f.address}</div>
+          <div class="row" style="gap:8px; flex-wrap:wrap;">
+            <a class="btn call" href="tel:${f.phone}">전화</a>
+            <a class="btn nav" href="${gmapDir(f.lat,f.lng)}" target="_blank" rel="noopener">길찾기</a>
+            <button class="btn call" data-focus="${f.lat},${f.lng}">지도로 보기</button>
+          </div>`;
+        el.querySelector('[data-focus]').addEventListener('click', ()=>{
+          map.setView([f.lat,f.lng], 17, {animate:true});
+        });
+        listEl.appendChild(el);
+      });
+    }
+
+    /* ===== 시작 ===== */
+    const locText = document.getElementById('locText');
+    function start(){
+      if(navigator.geolocation){
+        navigator.geolocation.getCurrentPosition(pos=>{
+          const center = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          locText.textContent = `내 위치: ${center.lat.toFixed(5)}, ${center.lng.toFixed(5)}`;
+          initMap(center);
+          renderFacilities(center, mockFacilities(center));
+        }, ()=>{
+          locText.textContent = '위치 권한 거부됨 · 기본 위치(서울시청)';
+          const center = { lat:37.5663, lng:126.9779 };
+          initMap(center);
+          renderFacilities(center, mockFacilities(center));
+        }, { enableHighAccuracy:true, timeout:10000 });
+      } else {
+        locText.textContent = '이 브라우저는 위치 확인을 지원하지 않음';
+        const center = { lat:37.5663, lng:126.9779 };
+        initMap(center);
+        renderFacilities(center, mockFacilities(center));
+      }
+    }
+    start();
+
+    /* ===== 바텀시트: 클릭 토글 + 드래그 =====
+       - 접힘 상태에서도 항상 --peek 만큼은 보임
+       - 드래그는 '그랩'에서만 처리하여 리스트 스크롤과 충돌 방지
+    */
+    const sheet = document.getElementById('sheet');
+    const grab  = sheet.querySelector('.grab');
+    const PEEK  = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--peek')) || 56;
+
+    grab.addEventListener('click', ()=> sheet.classList.toggle('open'));
+
+    let dragging=false, startY=0, startOffset=0;
+    function collapsedOffset(){ return sheet.getBoundingClientRect().height - PEEK; } // px
+    function currentOffset(){
+      // open이면 0, 닫힘이면 collapsedOffset
+      return sheet.classList.contains('open') ? 0 : collapsedOffset();
+    }
+
+    function onStart(y){
+      dragging=true; startY=y; startOffset=currentOffset();
+      sheet.style.transition='none';
+    }
+    function onMove(y){
+      if(!dragging) return;
+      const dy = y - startY;
+      const collapsed = collapsedOffset();
+      let next = Math.max(0, Math.min(collapsed, startOffset + dy));
+      sheet.style.transform = `translateY(${next}px)`; // 드래그 동안 px 단위로 제어
+    }
+    function onEnd(y){
+      if(!dragging) return;
+      const dy = y - startY;
+      const collapsed = collapsedOffset();
+      const endOffset = Math.max(0, Math.min(collapsed, startOffset + dy));
+      const shouldOpen = endOffset < collapsed/2;  // 절반 이상 올리면 열기
+      sheet.classList.toggle('open', shouldOpen);
+      sheet.style.transition=''; sheet.style.transform=''; // CSS 상태로 복귀
+      dragging=false;
+    }
+
+    // 드래그는 그랩에서만 (리스트 스크롤과 충돌 방지)
+    grab.addEventListener('touchstart', e=> onStart(e.touches[0].clientY), {passive:true});
+    grab.addEventListener('touchmove',  e=> onMove(e.touches[0].clientY),  {passive:true});
+    grab.addEventListener('touchend',   e=> onEnd((e.changedTouches[0]||e.touches[0]).clientY), {passive:true});
+    grab.addEventListener('mousedown',  e=> onStart(e.clientY));
+    window.addEventListener('mousemove', e=> onMove(e.clientY));
+    window.addEventListener('mouseup',   e=> onEnd(e.clientY));
+  </script>
+</body>
+</html>

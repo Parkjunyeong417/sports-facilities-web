@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0c10" />
+  <title>실버코치 · 내 정보</title>
+  <style>
+
+    :root {
+      --bg: #0b0c10;        /* 배경 (다크) */
+      --card: #151922;      /* 카드 */
+      --ink: #eef2f7;       /* 본문 텍스트 */
+      --muted: #b5c0d0;     /* 보조 텍스트 */
+      --accent: #5eead4;    /* 포인트 */
+      --danger: #ef4444;    /* 경고 */
+      --shadow: 0 6px 20px rgba(0,0,0,.25);
+      --radius: 18px;
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f6f8fb;
+        --card: #ffffff;
+        --ink: #0b0c10;
+        --muted: #5b6472;
+        --accent: #0ea5e9;
+        --danger: #dc2626;
+        --shadow: 0 6px 18px rgba(12, 27, 61, .12);
+      }
+      meta[name="theme-color"] { content: #f6f8fb; }
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font: 16px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Noto Sans KR, Apple SD Gothic Neo, Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    .app {
+      min-height: 100svh;
+      padding: calc(12px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom));
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .brand {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: .2px;
+      display:flex; gap:8px; align-items:center;
+      text-decoration: none; color: inherit;
+    }
+    .brand .dot { width:10px; height:10px; border-radius:50%; background: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 25%, transparent); }
+    .subtitle { color: var(--muted); font-size: 13px; }
+
+    .toolbar { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .back { text-decoration:none; color:inherit; padding:8px 10px; border-radius:12px; }
+
+    .card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px; }
+    .section-title { font-weight: 700; margin: 8px 0 12px; }
+    .kv { display:grid; grid-template-columns: 1fr auto; gap: 10px; align-items:center; padding:10px 0; border-bottom:1px solid color-mix(in srgb, var(--ink) 8%, transparent); }
+    .kv:last-child { border-bottom:0; }
+    .k { color: var(--muted); font-size:14px; }
+    .v { font-weight:600; }
+
+    .field { display:grid; gap:6px; margin:10px 0 14px; }
+    .input, .textarea {
+      width:100%; background: color-mix(in srgb, var(--card) 86%, transparent);
+      color: var(--ink); border:1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+      border-radius:12px; padding:12px 14px; font-size:16px;
+    }
+    .textarea { min-height:68px; resize: vertical; }
+
+    .btnrow { display:flex; gap:10px; flex-wrap:wrap; }
+    .btn {
+      appearance:none; border:0; border-radius:14px; padding:12px 16px; font-weight:700; cursor:pointer;
+      background: var(--accent); color:#0b0c10; box-shadow: var(--shadow);
+    }
+    .btn.secondary { background: color-mix(in srgb, var(--ink) 8%, transparent); color: var(--ink); }
+    .btn.danger { background: var(--danger); color:#fff; }
+
+    .muted { color: var(--muted); font-size: 13px; }
+
+    @media (min-width: 480px) { .app { max-width: 420px; margin: 0 auto; } }
+  </style>
+</head>
+<body>
+  <main class="app" role="application" aria-label="실버코치 · 내 정보">
+    <header class="topbar">
+      <a class="brand" href="index.html" aria-label="실버코치 홈으로">
+        <span class="dot" aria-hidden="true"></span>
+        실버코치
+      </a>
+      <div class="subtitle">내 정보</div>
+    </header>
+
+    <div class="toolbar">
+      <a class="back" href="index.html">← 홈</a>
+      <span></span>
+    </div>
+
+    <!-- 기본 정보 (읽기 전용) -->
+    <section class="card" aria-label="기본 정보">
+      <div class="section-title">기본 정보</div>
+      <div class="kv"><div class="k">이름</div><div class="v" id="v-name">—</div></div>
+      <div class="kv"><div class="k">전화번호</div><div class="v" id="v-phone">—</div></div>
+      <div class="kv"><div class="k">연령</div><div class="v" id="v-age">—</div></div>
+    </section>
+
+    <!-- 수정 가능 영역 -->
+    <section class="card" aria-label="신체/건강 정보" style="margin-top:12px;">
+      <div class="section-title">신체/건강 정보 (수정 가능)</div>
+      <form id="form-myinfo" autocomplete="off">
+        <div class="field">
+          <label for="height" class="k">신장(cm)</label>
+          <input id="height" class="input" type="number" step="0.1" inputmode="decimal" min="80" max="250" required />
+        </div>
+        <div class="field">
+          <label for="weight" class="k">체중(kg)</label>
+          <input id="weight" class="input" type="number" step="0.1" inputmode="decimal" min="20" max="200" required />
+        </div>
+        <div class="field">
+          <label for="discomfort" class="k">불편한 곳</label>
+          <textarea id="discomfort" class="textarea" placeholder="예: 오른쪽 무릎 통증, 허리 뻐근함"></textarea>
+        </div>
+
+        <div class="btnrow">
+          <button type="submit" class="btn">저장</button>
+          <button type="button" id="btn-cancel" class="btn secondary">취소</button>
+        </div>
+        <p class="muted" style="margin-top:8px;">* 이름·전화번호·연령은 이 화면에서 변경할 수 없습니다.</p>
+      </form>
+    </section>
+
+    <!-- 보호자 정보 -->
+    <section class="card" aria-label="보호자 정보" style="margin-top:12px;">
+      <div class="section-title">보호자 정보</div>
+      <div class="kv"><div class="k">이름</div><div class="v" id="v-guardian-name">—</div></div>
+      <div class="kv"><div class="k">전화번호</div><div class="v" id="v-guardian-phone">—</div></div>
+    </section>
+
+    <!-- 로그아웃 / 회원탈퇴 -->
+    <section class="card" aria-label="계정" style="margin-top:12px;">
+      <div class="btnrow" style="justify-content:space-between;">
+        <button class="btn secondary" id="btn-logout">로그아웃</button>
+        <button class="btn danger" id="btn-withdraw">회원탈퇴</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // ===== 데이터 저장소 =====
+    const KEY = 'silvercoach.user';
+
+    function defaultUser() {
+      return {
+        name: '홍길동',
+        phone: '010-1234-5678',
+        age: 72,
+        heightCm: 160.0,
+        weightKg: 60.0,
+        discomfort: '무릎 약함',
+        guardian: {
+          name: '김보호',
+          phone: '010-9876-5432'
+        }
+      };
+    }
+
+    function loadUser() {
+      try {
+        const raw = localStorage.getItem(KEY);
+        return raw ? JSON.parse(raw) : defaultUser();
+      } catch (e) {
+        return defaultUser();
+      }
+    }
+
+    function saveUser(u) {
+      localStorage.setItem(KEY, JSON.stringify(u));
+    }
+
+    let user = loadUser();
+
+    // ===== 화면 바인딩 =====
+    function renderView() {
+      // 읽기 전용 필드
+      document.getElementById('v-name').textContent  = user.name  || '—';
+      document.getElementById('v-phone').textContent = user.phone || '—';
+      document.getElementById('v-age').textContent   = user.age ?? '—';
+
+      // 보호자 정보
+      document.getElementById('v-guardian-name').textContent  = user.guardian?.name  || '—';
+      document.getElementById('v-guardian-phone').textContent = user.guardian?.phone || '—';
+
+      // 수정 가능 입력값
+      document.getElementById('height').value     = user.heightCm ?? '';
+      document.getElementById('weight').value     = user.weightKg ?? '';
+      document.getElementById('discomfort').value = user.discomfort ?? '';
+    }
+
+    renderView();
+
+    // 저장
+    document.getElementById('form-myinfo').addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      const height = parseFloat(document.getElementById('height').value);
+      const weight = parseFloat(document.getElementById('weight').value);
+      const discomfort = document.getElementById('discomfort').value.trim();
+
+      if (isNaN(height) || height < 80 || height > 250) {
+        alert('신장은 80~250cm 사이의 숫자로 입력해 주세요.');
+        return;
+      }
+      if (isNaN(weight) || weight < 20 || weight > 200) {
+        alert('체중은 20~200kg 사이의 숫자로 입력해 주세요.');
+        return;
+      }
+
+      user.heightCm = Math.round(height * 10) / 10;
+      user.weightKg = Math.round(weight * 10) / 10;
+      user.discomfort = discomfort;
+
+      saveUser(user);
+      alert('저장되었습니다.');
+      renderView();
+    });
+
+    // 취소(입력값 되돌리기)
+    document.getElementById('btn-cancel').addEventListener('click', () => {
+      renderView();
+      alert('변경을 취소했습니다.');
+    });
+
+    // 로그아웃 (데모)
+    document.getElementById('btn-logout').addEventListener('click', () => {
+      alert('로그아웃되었습니다. (데모)');
+      location.href = 'index.html';
+    });
+
+    // 회원탈퇴 (데모)
+    document.getElementById('btn-withdraw').addEventListener('click', () => {
+      if (!confirm('정말 회원탈퇴 하시겠습니까?\n저장된 내 정보가 삭제됩니다.')) return;
+      localStorage.removeItem(KEY);
+      alert('회원탈퇴가 처리되었습니다. (데모)');
+      location.href = 'index.html';
+    });
+  </script>
+</body>
+</html>

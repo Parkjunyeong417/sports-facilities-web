@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0c10" />
+  <title>실버코치 · 운동 기록</title>
+  <style>
+    :root {
+      --bg:#0b0c10; --card:#151922; --ink:#eef2f7; --muted:#b5c0d0;
+      --accent:#5eead4; --danger:#ef4444; --shadow:0 6px 20px rgba(0,0,0,.25); --radius:18px;
+    }
+    @media (prefers-color-scheme: light){
+      :root { --bg:#f6f8fb; --card:#fff; --ink:#0b0c10; --muted:#5b6472; --accent:#0ea5e9; --danger:#dc2626; --shadow:0 6px 18px rgba(12,27,61,.12); }
+      meta[name="theme-color"]{ content:#f6f8fb; }
+    }
+    *{ box-sizing:border-box; } html,body{ height:100%; }
+    body{
+      margin:0; background:var(--bg); color:var(--ink);
+      font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Noto Sans KR,Apple SD Gothic Neo,Helvetica,Arial,sans-serif;
+      -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    }
+    .app{ min-height:100svh; padding:calc(12px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:12px; }
+    .topbar{ display:flex; align-items:center; justify-content:space-between; }
+    .brand{ font-size:18px; font-weight:700; letter-spacing:.2px; display:flex; gap:8px; align-items:center; text-decoration:none; color:inherit; }
+    .brand .dot{ width:10px; height:10px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 4px color-mix(in srgb, var(--accent) 25%, transparent); }
+    .subtitle{ color:var(--muted); font-size:13px; }
+    .toolbar{ display:flex; align-items:center; gap:8px; }
+    .back{ text-decoration:none; color:inherit; font-size:14px; padding:8px 10px; border-radius:12px; }
+
+    .card{ background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:14px; }
+    .section-title{ font-weight:700; margin:8px 0 12px; }
+    .mutetext{ color:var(--muted); font-size:13px; }
+
+    .btn{ appearance:none; border:0; border-radius:14px; padding:10px 12px; font-weight:700; cursor:pointer; background:var(--accent); color:#0b0c10; box-shadow:var(--shadow); }
+    .btn.secondary{ background: color-mix(in srgb, var(--ink) 8%, transparent); color:var(--ink); }
+
+    @media (min-width:480px){ .app{ max-width:420px; margin:0 auto; } }
+  </style>
+</head>
+<body>
+  <main class="app" role="application" aria-label="실버코치 · 운동 기록">
+    <header class="topbar">
+      <a class="brand" href="index.html" aria-label="실버코치 홈으로">
+        <span class="dot" aria-hidden="true"></span> 실버코치
+      </a>
+      <div class="subtitle">운동 기록</div>
+    </header>
+
+    <div class="toolbar">
+      <a class="back" href="index.html">← 홈</a>
+    </div>
+
+    <!-- 달력 -->
+    <section class="card" aria-label="달력">
+      <div class="section-title">달력</div>
+      <div id="calendar" style="display:grid; gap:8px;"></div>
+    </section>
+
+    <!-- 선택 날짜 기록 -->
+    <section class="card" aria-label="선택 날짜 기록" style="margin-top:12px;">
+      <div class="section-title" id="day-title">기록(날짜 선택)</div>
+      <div id="day-list" style="display:grid; gap:10px;"></div>
+    </section>
+  </main>
+
+  <script>
+    const KEY_LOGS = 'silvercoach.logs';
+
+    function loadLogs(){ try{ return JSON.parse(localStorage.getItem(KEY_LOGS)) || []; }catch(e){ return []; } }
+    function fmtSec(s){ const m=Math.floor(s/60), r=s%60; return (m?m+'분 ':'')+(r?r+'초':''); }
+
+    const calEl = document.getElementById('calendar');
+    const dayTitle = document.getElementById('day-title');
+    const dayList = document.getElementById('day-list');
+
+    function makeCalendar(year, month){ // month 0-11
+      calEl.innerHTML = '';
+
+      // 상단 (월 전후 이동)
+      const header = document.createElement('div');
+      header.style.display='flex'; header.style.alignItems='center'; header.style.justifyContent='space-between';
+      const title = document.createElement('div'); title.style.fontWeight='700'; title.textContent = `${year}년 ${month+1}월`;
+      const nav = document.createElement('div');
+      const prev = document.createElement('button'); prev.className='btn secondary'; prev.textContent='←';
+      const next = document.createElement('button'); next.className='btn secondary'; next.textContent='→';
+      nav.appendChild(prev); nav.appendChild(next);
+      header.appendChild(title); header.appendChild(nav);
+      calEl.appendChild(header);
+
+      // 요일 헤더
+      const days = ['일','월','화','수','목','금','토'];
+      const grid = document.createElement('div');
+      grid.style.display='grid'; grid.style.gridTemplateColumns='repeat(7,1fr)'; grid.style.gap='6px';
+      days.forEach(d=>{ const s=document.createElement('div'); s.className='mutetext'; s.style.textAlign='center'; s.textContent=d; grid.appendChild(s); });
+
+      // 빈 칸 + 날짜 셀
+      const first = new Date(year, month, 1);
+      const last = new Date(year, month+1, 0);
+      for(let i=0;i<first.getDay();i++){ grid.appendChild(document.createElement('div')); }
+
+      // 날짜별 기록 유무 표시
+      const logs = loadLogs();
+      const map = {};
+      logs.forEach(l=>{ (map[l.date] ||= 0); map[l.date]++; });
+
+      for(let d=1; d<=last.getDate(); d++){
+        const btn = document.createElement('button');
+        btn.className='btn secondary'; btn.style.padding='10px 0';
+        const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        btn.textContent = d;
+        if(map[dateStr]){ btn.style.outline = '2px solid var(--accent)'; btn.title = `${map[dateStr]}개 기록`; }
+        btn.addEventListener('click', ()=> showDay(dateStr));
+        grid.appendChild(btn);
+      }
+
+      calEl.appendChild(grid);
+
+      prev.addEventListener('click', ()=>{
+        const dt = new Date(year, month, 1); dt.setMonth(dt.getMonth()-1);
+        makeCalendar(dt.getFullYear(), dt.getMonth());
+      });
+      next.addEventListener('click', ()=>{
+        const dt = new Date(year, month, 1); dt.setMonth(dt.getMonth()+1);
+        makeCalendar(dt.getFullYear(), dt.getMonth());
+      });
+    }
+
+    function showDay(dateStr){
+      dayTitle.textContent = `기록 · ${dateStr}`;
+      const logs = loadLogs().filter(l=>l.date === dateStr);
+      dayList.innerHTML = '';
+      if(!logs.length){
+        dayList.innerHTML = '<div class="mutetext">기록이 없습니다.</div>';
+        return;
+      }
+      logs.forEach(l=>{
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <div style="display:grid; gap:6px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div style="font-weight:700;">${l.name}</div>
+              <div class="mutetext">${l.startTime || '-'}</div>
+            </div>
+            <div class="mutetext">진행 시간 ${fmtSec(l.durationSec || 0)} · 완료 ${l.completed ? 'Y' : 'N'}</div>
+          </div>
+        `;
+        dayList.appendChild(card);
+      });
+    }
+
+    // 초기 렌더
+    const now = new Date();
+    makeCalendar(now.getFullYear(), now.getMonth());
+    // 오늘 날짜 자동 표시 (기록 없으면 "기록이 없습니다.")
+    showDay(new Date().toISOString().slice(0,10));
+  </script>
+</body>
+</html>

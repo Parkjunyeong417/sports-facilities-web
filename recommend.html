@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0c10" />
+  <title>실버코치 · 운동 추천</title>
+  <style>
+    :root {
+      --bg: #0b0c10;        /* 배경 (다크) */
+      --card: #151922;      /* 카드 */
+      --ink: #eef2f7;       /* 본문 텍스트 */
+      --muted: #b5c0d0;     /* 보조 텍스트 */
+      --accent: #5eead4;    /* 포인트 */
+      --shadow: 0 6px 20px rgba(0,0,0,.25);
+      --radius: 18px;
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f6f8fb;
+        --card: #ffffff;
+        --ink: #0b0c10;
+        --muted: #5b6472;
+        --accent: #0ea5e9;
+        --shadow: 0 6px 18px rgba(12, 27, 61, .12);
+      }
+      meta[name="theme-color"] { content: #f6f8fb; }
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font: 16px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Noto Sans KR, Apple SD Gothic Neo, Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    .app {
+      min-height: 100svh;
+      padding: calc(12px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom));
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .brand {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: .2px;
+      display:flex; gap:8px; align-items:center;
+      text-decoration: none; color: inherit;
+    }
+    .brand .dot { width:10px; height:10px; border-radius:50%; background: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 25%, transparent); }
+    .subtitle { color: var(--muted); font-size: 13px; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 4px;
+      flex: 1;
+    }
+
+    .tile {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 10px;
+      text-decoration: none;
+      color: inherit;
+      background: linear-gradient(180deg, color-mix(in srgb, var(--card) 86%, transparent), var(--card));
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      aspect-ratio: 1 / 1;
+      padding: 16px;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      outline: none;
+      min-height: 120px;
+    }
+    .tile:focus-visible { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 60%, transparent), var(--shadow); }
+    .tile:active { transform: translateY(1px) scale(0.997); }
+
+    .tile .label { font-weight: 700; font-size: 30px; letter-spacing: .2px; }
+    .tile .hint { font-size: 12px; color: var(--muted); }
+
+    .footer { text-align:center; color: var(--muted); font-size: 12px; margin-top: 12px; }
+
+    @media (min-width: 480px) {
+      .app { max-width: 420px; margin: 0 auto; }
+    }
+
+    .back { text-decoration:none; color:inherit; padding:8px 10px; border-radius:12px; }
+  </style>
+</head>
+<body>
+  <main class="app" role="application" aria-label="실버코치 · 운동 추천 메뉴">
+    <header class="topbar">
+      <a class="brand" href="index.html" aria-label="실버코치 홈">
+        <span class="dot" aria-hidden="true"></span>
+        실버코치
+      </a>
+      <div class="subtitle">운동 추천</div>
+    </header>
+
+    <a class="back" href="index.html">← 홈</a>
+
+    <section class="grid" aria-label="운동 추천 메뉴">
+      <a class="tile" href="AIrecommend.html" role="button" aria-label="AI 운동 추천으로 이동">
+        <span class="label">AI 운동 추천</span>
+        <span class="hint">신장·체중·불편 기반</span>
+      </a>
+
+      <a class="tile" href="sportsList.html" role="button" aria-label="운동 목록으로 이동">
+        <span class="label">운동 목록</span>
+        <span class="hint">종류별 리스트</span>
+      </a>
+    </section>
+
+    <p class="footer" aria-hidden="true">© 2025 SilverCoach</p>
+  </main>
+</body>
+</html>
